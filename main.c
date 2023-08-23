@@ -114,6 +114,39 @@ int f2(int arr[], int M, int x, int* n2) {
     return -1;
 }
 
+int f3(int arr[], int M, int x, int* n3) {
+    /*I will still perform a binary search, however, this time it will be done
+    not for size M array, but for size R = 2^(1+Math.floor(log2(n))),
+    which is at worst case 2n. Thus, by performing binary search on such input,
+    we must perform at most another 1 or 2 iterations, since (log2(2n)) ~~ log2(n)+1*/
+    int R = 1;
+    (*n3) = 1;//for the first check of the while loop condition
+    while (R < M) {/*Not the best choise for ending condition, but since we know that n<=250,
+                    worst case scenario is R==256==2^8*/
+
+        /*if during the search for R, I have found an index such that
+        arr[R]>x, I have found an ideal candidate for end_index, and can thus beign
+        binary-searching away*/
+        (*n3)++;
+        if (arr[R - 1] > x){
+            return f2(arr, R-1, x, &n3);//using the modified binary search f2
+        }
+        (*n3)++;
+        if (arr[R-1] == x) {//if by pure dumb luck, n sits in an index which is a power of 2
+            return R-1;
+        }
+        (*n3)++;
+        if (arr[R-1] == 0) {
+            break;//Found either n or 2n
+        }
+        R *= 2;
+        (*n3)++;//For the while loop
+    }
+    /*Now that I have R, a number that stays true to the condition n<=R<=2n(in our little world, worst case scenario: R=256),
+    i can call binary search, which for R mean time-complexity of O(log2(R)), which nets us O(logn)*/
+    return f2(arr, R - 1, x, &n3);
+}
+
 int checkIfOneNeighbourIsTheSame(int arr[], int i,int n) {
     int flag = 0;
     if (i < 0) {
@@ -136,6 +169,7 @@ int main() {
     int input_array[1000];
     int totalCmp1 = 0;
     int totalCmp2 = 0;
+    int totalCmp3 = 0;
     for (int j = 0; j < num_arrays; j++) {
         int n = rand() % 101 + 150;
         generate_random_array(input_array, n);
@@ -156,10 +190,13 @@ int main() {
         totalCmp1 += numOfComparisons1;
         totalCmp2 += numOfComparisons2;
         printf("\nnumOfComparisons1 = %d,totalCmp1 = %d, n= %d", numOfComparisons1, totalCmp1,n);
-        printf("\nnumOfComparisons2 = %d,totalCmp1 = %d, n= %d\n", numOfComparisons2, totalCmp2,n);
-        if (res1 != res2) {
-            printf("res1 is %d, while res2 is %d", res1, res2);
-            if(res1>=0){
+        printf("\nnumOfComparisons2 = %d,totalCmp2 = %d, n= %d\n", numOfComparisons2, totalCmp2,n);
+        int res3 = f3(input_array, 1000, randomNum, &numOfComparisons3);
+        totalCmp3 += numOfComparisons3;
+        printf("\nnumOfComparisons3 = %d,totalCmp3 = %d, n= %d\n", numOfComparisons3, totalCmp3, n);
+        if (res1 != res2 || res1!=res3) {
+            printf("res1 is %d, while res2 is %d, res3 is %d", res1, res2,res3);
+            if (res1 >= 0) {
                 if (checkIfOneNeighbourIsTheSame(input_array, res1, n)) {
                     printf("\n res1 neighbour is the same");
                 }
@@ -173,6 +210,14 @@ int main() {
                 }
                 else {
                     printf("\n res2 no duplicates. what does thie mean?");
+                }
+            }
+            if (res3 >= 0) {
+                if (checkIfOneNeighbourIsTheSame(input_array, res3, n)) {
+                    printf("\n res3 neighbour is the same");
+                }
+                else {
+                    printf("\n res3 no duplicates. what does thie mean?");
                 }
             }
         }
@@ -200,5 +245,7 @@ int main() {
     printf("\n\nSearch1:%f", avg1);
     float avg2 = totalCmp2 / 200;
     printf("\n\nSearch2: %f", avg2);
+    float avg3 = totalCmp3 / 200;
+    printf("\n\nSearch3: %f\n\n", avg3);
     return 0;
 }
